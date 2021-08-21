@@ -18,21 +18,14 @@ namespace EncodingFixer
         private static bool verbose = false;
         public static void Log(string msg)
         {
-            if (verbose == false) { return; }
-            Console.WriteLine($"Log: {msg}", Color.Yellow);
-        }
-        class Options
-        {
-            [Option('f', "files", Required = true, HelpText = "Text files to set their encoding, you can use patterns like *.srt.", Separator = ',')]
-            public IEnumerable<string> InputFiles { get; set; }
-
-            [Option('v', Default = false, HelpText = "Prints all debugging messages to standard output.")]
-            public bool Verbose { get; set; }
-
+            if (!verbose) { return; }
+            Console.WriteLine(msg, Color.Blue);
         }
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             Parser.Default.ParseArguments<Options>(args)
               .WithParsed(opts => RunOptionsAndReturnExitCode(opts))
               .WithNotParsed((errs) => HandleParseError(errs));
@@ -41,11 +34,11 @@ namespace EncodingFixer
         private static void HandleParseError(IEnumerable<Error> errs)
         {
             errs = errs.Where(e => e.Tag != ErrorType.HelpRequestedError);
-            if (errs.Any() == false)
+            if (!errs.Any())
             {
                 return;
             }
-            PrintError("One or more error happened during the parsing of the command line.\nErros: ");
+            PrintError("One or more error happened during the parsing of the arguments.\nErros: ");
             foreach (var err in errs.Where(e => e.Tag != ErrorType.HelpRequestedError))
             {
                 Console.WriteLine(err.Tag);
@@ -56,19 +49,37 @@ namespace EncodingFixer
         private static void RunOptionsAndReturnExitCode(Options opts)
         {
             verbose = opts.Verbose;
+            try
+            {
+                if (opts.Directory != null && !Directory.Exists(opts.Directory))
+                {
+                    PrintError("Invalid files directory.");
+                    Environment.Exit(-1);
+                }
+            }
+            catch
+            {
+                PrintError("Invalid files directory.");
+                Environment.Exit(-1);
+            }
+
             Log("Building file list.");
-            List<string> files = new List<string>(1000);
-            var workingDir = new DirectoryInfo(Environment.CurrentDirectory);
+            List<string> files = new(1000);
+            var searchDir = new DirectoryInfo(opts.Directory ?? Environment.CurrentDirectory);
+            Log($"Searching for files in {searchDir}");
+
             foreach (var pattern in opts.InputFiles)
             {
-                var searchResult = workingDir.EnumerateFiles(pattern, SearchOption.TopDirectoryOnly).Select(f => f.FullName);
-                if (searchResult.Any() == false)
+                var searchResult = searchDir
+                .EnumerateFiles(pattern, SearchOption.TopDirectoryOnly)
+                .Select(f => f.FullName);
+                if (!searchResult.Any())
                 {
-                    PrintError($"File: {pattern} doesnt exist.");
+                    PrintError($"File: {pattern} doesn't exist in directory.");
                 }
                 files.AddRange(searchResult);
             }
-            Log($"List of files to process:\n{string.Join(Environment.NewLine, files)}");
+            Log($"List of files to process:\n\t{string.Join($"{Environment.NewLine}\t", files)}");
             Encoding fileOriginalEncoding = Encoding.GetEncoding(1256);
             Encoding fileNewEncoding = new UTF8Encoding();
             Parallel.ForEach(files, file =>
@@ -76,7 +87,7 @@ namespace EncodingFixer
                 Log($"Processing file {file}");
                 File.WriteAllText(file, File.ReadAllText(file, fileOriginalEncoding), fileNewEncoding);
             });
-            Console.WriteLine("Fixed encoding of all Files!", Color.Green);
+            Console.WriteLine("Fixed encoding of all files!", Color.Green);
             Environment.Exit(0);
         }
     }
