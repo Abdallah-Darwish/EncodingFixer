@@ -14,4 +14,4 @@ Run `dotnet run` inside the project folder, also you can use `-h` to see availab
 
 
 ## Screenshots
-![Show case](https://github.com/Abdallah-Darwish/EncodingFixer/raw/main/ShowCase.png)
+![Show case](https://raw.githubusercontent.com/Abdallah-Darwish/EncodingFixer/master/Showcase.png)
