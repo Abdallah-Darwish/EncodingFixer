@@ -1,11 +1,11 @@
-﻿using CommandLine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommandLine;
 using Console = Colorful.Console;
 namespace EncodingFixer
 {
@@ -70,6 +70,15 @@ namespace EncodingFixer
 
             foreach (var pattern in opts.InputFiles)
             {
+                try
+                {
+                    if (File.Exists(pattern))
+                    {
+                        files.Add(pattern);
+                        continue;
+                    }
+                }
+                catch { }
                 var searchResult = searchDir
                 .EnumerateFiles(pattern, SearchOption.TopDirectoryOnly)
                 .Select(f => f.FullName);

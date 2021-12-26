@@ -6,7 +6,7 @@ This program will fix subtitles encoding.
 
 
 ## Requiremnts
-- [Dotnet 5 Sdk](https://dotnet.microsoft.com/download/dotnet/5.0).
+- [Dotnet 6 Sdk](https://dotnet.microsoft.com/download/dotnet/6.0).
 
 
 ## Running
